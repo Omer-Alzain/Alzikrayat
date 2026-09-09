@@ -1,0 +1,7 @@
+# Database credentials
+config/database.php
+
+# Uploaded images
+public/images/uploads/*
+
+# Local test files
