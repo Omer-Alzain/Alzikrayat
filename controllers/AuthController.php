@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/AuthModel.php';
 require_once __DIR__ . '/../core/Validator.php';
+require_once __DIR__ . '/../core/Session.php';
+require_once __DIR__ . '/../core/Cookie.php';
 class AuthController extends Controller{
     private $AuthModel;
 
@@ -95,6 +97,9 @@ class AuthController extends Controller{
                 // Check if the user exists and the password is correct
                 $user = $this->AuthModel->getUserByEmail($email);
                 if ($user && password_verify($password, $user['password_hash'])) {
+                    // Successful login, set session or token as needed
+                    Session::login($user);
+                    Cookie::setLastLoginCookie();
                     header('Location: /gallery'); // Redirect to a dashboard or home page
                     exit;
                 } else {
@@ -105,12 +110,14 @@ class AuthController extends Controller{
             // If there are validation errors, pass them to the view
             $this->view('auth/login', ['errors' => $errors, 'data' => ['email' => $email]]);
         } else {
-            $this->view('auth/login');
+            $this->view('auth/login', ['lastLogin' => Cookie::getLastLoginCookie()]);
         }
     }
 
     public function logout()
     {
+        // Destroy the session or remove the authentication token
+        Session::logout();
         header('Location: /gallery'); // Redirect to the gallery page
         exit;
     }
