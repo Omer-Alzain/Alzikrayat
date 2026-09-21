@@ -54,4 +54,21 @@ class Validator {
 
         return $errors;
     }
+    public static function validateImage($file){
+        $errors = [];
+        if($file['error'] === UPLOAD_ERR_NO_FILE) {
+            $errors[] = 'No file uploaded.';
+        }else if($file['error'] !== UPLOAD_ERR_OK) {
+            $errors[] = 'Error uploading file.';
+        } else {
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!in_array($file['type'], $allowedTypes)) {
+                $errors[] = 'Only JPG, PNG, and WEBP files are allowed.';
+            }
+            if ($file['size'] > 2 * 1024 * 1024) { 
+                $errors[] = 'File size must be less than 2MB.';
+            }
+        }
+        return $errors;
+    }
 }
