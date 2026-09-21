@@ -20,14 +20,14 @@ class PhotoModel extends Model
     public function createPhoto($data)
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO Photos (user_id, title, description, file_path, created_at)
-             VALUES (:user_id, :title, :description, :file_path, NOW())"
+            "INSERT INTO Photos (user_id, file_name, title, description)
+             VALUES (:user_id, :file_name, :title, :description)"
         );
         $stmt->execute([
             ':user_id' => $data['user_id'],
+            ':file_name' => $data['file_name'],
             ':title' => $data['title'],
-            ':description' => $data['description'],
-            ':file_path' => $data['file_path']
+            ':description' => $data['description']
         ]);
         return (int) $this->db->lastInsertId();
     }

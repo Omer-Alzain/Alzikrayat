@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/PhotoModel.php';
+require_once __DIR__ . '/../core/Validator.php';
+require_once __DIR__ . '/../core/Session.php';
+
 class PhotoController extends Controller{
     private $photoModel;
 
@@ -58,20 +61,19 @@ class PhotoController extends Controller{
             $rules = [
                 'title' => ['required'],
                 'description' => ['optional'],
-                'photo' => ['required', 'image']
             ];
-            Validator::validate($data, $rules);
+            $errors = Validator::validate($data, $rules);
             // Validate the uploaded file
-            $errors = Validator::validateImage($file);
-            if (!empty($errors)) {
+            $imageErrors = Validator::validateImage($file);
+            if (!empty($errors) || !empty($imageErrors)) {
                 // Handle validation errors (e.g., redirect back with error messages)
                 $_SESSION['errors'] = $errors;
-                header('Location: /photos/create');
+                header('Location: /photos/upload');
                 exit;
             }
 
             // Move the uploaded file to a desired location
-            $uploadDir = __DIR__ . '/../images/uploads/';
+            $uploadDir = __DIR__ . '/../public/images/uploads/';
             $extension = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
             $fileName = uniqid('photo_', true) . '.' . $extension;
             $filePath = $uploadDir . $fileName;
@@ -83,7 +85,7 @@ class PhotoController extends Controller{
                     'title' => $data['title'],
                     'description' => $data['description']
                 ]);
-                header('Location: /photos/' . $photoId);
+                header('Location: /photo/' . $photoId);
                 exit;
             } else {
                 // Handle file upload error
@@ -99,8 +101,27 @@ class PhotoController extends Controller{
             header('Location: /auth/login');
             exit;
         }
-        this->photoModel->deletePhoto($id, Session::getCurrentUserId());
-        header('Location: /photos/gallery');
+        $photo = $this->photoModel->getPhotoById($id);
+        $userId = Session::getCurrentUserId();
+        if (!$photo || (int) $photo['user_id'] !== $userId) {
+            // Handle the case where the photo does not belong to the user or does not exist
+            $_SESSION['errors'] = ['photo' => ['You do not have permission to delete this photo.']];
+            header('Location: /gallery');
+            exit;
+        }
+        $deleteSuccess = $this->photoModel->deletePhoto($id, $userId);
+        if (!$deleteSuccess) {
+            $_SESSION['errors'] = ['photo' => ['Failed to delete the photo.']];
+            header('Location: /gallery');
+            exit;
+        }
+        $filePath = __DIR__ . '/../public/images/uploads/' . $photo['file_name'];
+        if (file_exists($filePath)) {
+            unlink($filePath); // Delete the file from the server
+        }else {
+            $_SESSION['errors'] = ['photo' => ['Failed to delete the photo file from the server.']];
+        }
+        header('Location: /gallery');
         exit;
     }
 }
