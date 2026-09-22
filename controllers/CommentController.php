@@ -48,11 +48,15 @@ class CommentController extends Controller{
                 } else {
                     // Handle error in comment creation
                     $_SESSION['errors'] = ['comment' => ['error creating comment.']];
-                    header('Location: /photo/'.$data['photo_id']);
+                    header('Location: /photo/'.$data['photo_id'], ['errors' => $errors]);
+                    unset($_SESSION['errors']);
                     exit;
                 }
             }
             $_SESSION['errors'] = $errors;
+            header('Location: /photo/' . $data['photo_id'], ['errors' => $errors]);
+            unset($_SESSION['errors']);
+            exit;
         }
     }
     public function delete($commentId , $photoId){
@@ -64,7 +68,8 @@ class CommentController extends Controller{
         $deleteSucsses = $this->commentModel->deleteComment($commentId , Session::getCurrentUserId());
         if(!$deleteSucsses){
             $_SESSION['errors'] = ['comment' => ['error deleting comment.']];
-            header('Location: /photo/'.$photoId);
+            header('Location: /photo/'.$photoId, ['errors' => $errors]);
+            unset($_SESSION['errors']);
             exit;
         }
         header('Location: /photo/'.$photoId);

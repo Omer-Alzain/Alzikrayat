@@ -31,17 +31,11 @@ class PhotoController extends Controller{
         if ($photo) {
             $comments = $this->commentModel->getCommentsByPhotoId($id);
             $data = [
-                'photo' => $photo
+                'photo' => $photo,
+                'comments' => $comments
             ];
-            if($comments){
-                $data = [
-                    'photo' => $photo,
-                    'comments' => $comments
-                ];
-            }
             $this->view('photos/photoDetails', $data);
         } else {
-            // Handle photo not found (e.g., redirect to gallery or show an error message)
             header('Location: /gallery');
             exit;
         }
@@ -52,7 +46,9 @@ class PhotoController extends Controller{
             header('Location: /auth/login');
             exit;
         }
-        $this->view('photos/upload');
+        $errors = $_SESSION['errors'] ?? [];
+        unset($_SESSION['errors']);
+        $this->view('photos/upload', ['errors' => $errors]);
     }
     public function store()
     {
@@ -79,7 +75,8 @@ class PhotoController extends Controller{
             if (!empty($errors) || !empty($imageErrors)) {
                 // Handle validation errors (e.g., redirect back with error messages)
                 $_SESSION['errors'] = $errors;
-                header('Location: /photos/upload');
+                header('Location: /upload', ['errors' => $errors]);
+                unset($_SESSION['errors']);
                 exit;
             }
 
@@ -101,7 +98,8 @@ class PhotoController extends Controller{
             } else {
                 // Handle file upload error
                 $_SESSION['errors'] = ['photo' => ['Failed to upload the photo.']];
-                header('Location: /photos/upload');
+                header('Location: /upload',['errors' => $errors]);
+                unset($_SESSION['errors']);
                 exit;
             }
         }
@@ -117,13 +115,15 @@ class PhotoController extends Controller{
         if (!$photo || (int) $photo['user_id'] !== $userId) {
             // Handle the case where the photo does not belong to the user or does not exist
             $_SESSION['errors'] = ['photo' => ['You do not have permission to delete this photo.']];
-            header('Location: /gallery');
+            header('Location: /gallery', ['errors' => $errors]);
+            unset($_SESSION['errors']);
             exit;
         }
         $deleteSuccess = $this->photoModel->deletePhoto($id, $userId);
         if (!$deleteSuccess) {
             $_SESSION['errors'] = ['photo' => ['Failed to delete the photo.']];
-            header('Location: /gallery');
+            header('Location: /gallery', ['errors' => $errors]);
+            unset($_SESSION['errors']);
             exit;
         }
         $filePath = __DIR__ . '/../public/images/uploads/' . $photo['file_name'];
