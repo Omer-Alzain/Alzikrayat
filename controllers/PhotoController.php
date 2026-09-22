@@ -3,6 +3,8 @@ require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/PhotoModel.php';
 require_once __DIR__ . '/../core/Validator.php';
 require_once __DIR__ . '/../core/Session.php';
+require_once __DIR__ . '/../controllers/CommentController.php';
+
 
 class PhotoController extends Controller{
     private $photoModel;
@@ -24,10 +26,17 @@ class PhotoController extends Controller{
     public function show($id)
     {
         $photo = $this->photoModel->getPhotoById($id);
+        $comments = CommentController ::getCommentsOnPhoto($id);
         if ($photo) {
             $data = [
                 'photo' => $photo
             ];
+            if($comments){
+                $data = [
+                    'photo' => $photo,
+                    'comments' => $comments
+                ];
+            }
             $this->view('photos/photoDetails', $data);
         } else {
             // Handle photo not found (e.g., redirect to gallery or show an error message)
