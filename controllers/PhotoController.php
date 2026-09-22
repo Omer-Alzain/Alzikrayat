@@ -3,15 +3,17 @@ require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/PhotoModel.php';
 require_once __DIR__ . '/../core/Validator.php';
 require_once __DIR__ . '/../core/Session.php';
-require_once __DIR__ . '/../controllers/CommentController.php';
+require_once __DIR__ . '/../models/CommentModel.php';
 
 
 class PhotoController extends Controller{
     private $photoModel;
+    private $commentModel;
 
     public function __construct()
     {
         $this->photoModel = new PhotoModel();
+        $this->commentModel = new CommentModel();
     }
 
     public function index()
@@ -26,8 +28,8 @@ class PhotoController extends Controller{
     public function show($id)
     {
         $photo = $this->photoModel->getPhotoById($id);
-        $comments = CommentController ::getCommentsOnPhoto($id);
         if ($photo) {
+            $comments = $this->commentModel->getCommentsByPhotoId($id);
             $data = [
                 'photo' => $photo
             ];
@@ -99,7 +101,7 @@ class PhotoController extends Controller{
             } else {
                 // Handle file upload error
                 $_SESSION['errors'] = ['photo' => ['Failed to upload the photo.']];
-                header('Location: /photos/create');
+                header('Location: /photos/upload');
                 exit;
             }
         }
@@ -127,8 +129,6 @@ class PhotoController extends Controller{
         $filePath = __DIR__ . '/../public/images/uploads/' . $photo['file_name'];
         if (file_exists($filePath)) {
             unlink($filePath); // Delete the file from the server
-        }else {
-            $_SESSION['errors'] = ['photo' => ['Failed to delete the photo file from the server.']];
         }
         header('Location: /gallery');
         exit;

@@ -2,18 +2,19 @@
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/CommentModel.php';
 require_once __DIR__ . '/../core/Session.php';
+require_once __DIR__ . '/../core/Validator.php';
 
 class CommentController extends Controller{
-    private $CommentModel;
+    private $commentModel;
 
     public function __construct()
     {
-        $this->CommentModel = new CommentModel();
+        $this->commentModel = new commentModel();
     }
 
     public function getCommentsOnPhoto($photoId)
     {
-        $data = $this->CommentModel->getCommentsByPhotoId($photoId);
+        $data = $this->commentModel->getCommentsByPhotoId($photoId);
         if ($data === false) {
             // Handle the case where no comments are found
             $data = [];
@@ -30,20 +31,28 @@ class CommentController extends Controller{
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'photo_id' => $_POST['photo_id'] ?? '',
-                'user_id' => $_POST['user_id'] ?? '',
+                'user_id' => Session::getCurrentUserId() ?? '',
                 'comment' => $_POST['comment'] ?? '',
             ];
-            $commentId = $this->CommentModel->createComment($data);
-            if ($commentId) {
-                // Comment created successfully
-                header('Location: /photo/' . $data['photo_id']);
-                exit;
-            } else {
-                // Handle error in comment creation
-                $_SESSION['errors'] = ['comment' => ['error creating comment.']];
-                header('Location: /photo/'.$data['photo_id'] . '/comment');
-                
+            $rules = [
+                'comment' => ['required']
+            ];
+
+            $errors = Validator::validate($data, $rules);
+            if (empty($errors)) {
+                $commentId = $this->commentModel->createComment($data);
+                if ($commentId) {
+                    // Comment created successfully
+                    header('Location: /photo/' . $data['photo_id']);
+                    exit;
+                } else {
+                    // Handle error in comment creation
+                    $_SESSION['errors'] = ['comment' => ['error creating comment.']];
+                    header('Location: /photo/'.$data['photo_id']);
+                    exit;
+                }
             }
+            $_SESSION['errors'] = $errors;
         }
     }
     public function delete($commentId , $photoId){
@@ -52,12 +61,13 @@ class CommentController extends Controller{
             header('Location: /auth/login');
             exit;
         }
-        $deleteSucsses = $this->CommentModel->deleteComment($commentId , Session::getCurrentUserId());
+        $deleteSucsses = $this->commentModel->deleteComment($commentId , Session::getCurrentUserId());
         if(!$deleteSucsses){
             $_SESSION['errors'] = ['comment' => ['error deleting comment.']];
-            header('Location: /photo/'.$photoId. '/comment');
+            header('Location: /photo/'.$photoId);
             exit;
         }
         header('Location: /photo/'.$photoId);
+        exit;
     }
 }
