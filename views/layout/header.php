@@ -20,7 +20,6 @@
             <a href="/">Home</a>
             <a href="/gallery">Gallery</a>
             <a href="/upload">Upload</a>
-            <a href="/about">About</a>
         </div>
 
         <div class="nav-auth">
