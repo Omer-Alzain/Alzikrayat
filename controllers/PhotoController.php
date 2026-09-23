@@ -7,6 +7,7 @@ require_once __DIR__ . '/../models/CommentModel.php';
 
 
 class PhotoController extends Controller{
+    
     private $photoModel;
     private $commentModel;
 
@@ -51,59 +52,68 @@ class PhotoController extends Controller{
         $this->view('photos/upload', ['errors' => $errors]);
     }
     public function store()
-    {
-        if(!Session::isLoggedIn()){
-            header('Location: /auth/login');
+{
+    if(!Session::isLoggedIn()){
+        header('Location: /auth/login');
+        exit;
+    }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        error_log('=== STORE HIT ===');
+
+        $userId = Session::getCurrentUserId();
+        $data = [
+            'title' => $_POST['title'] ?? '',
+            'description' => $_POST['description'] ?? '',
+        ];
+        $file = $_FILES['photo'] ?? null;
+
+        $rules = [
+            'title' => ['required'],
+            'description' => ['optional'],
+        ];
+        $errors = Validator::validate($data, $rules);
+        $imageErrors = Validator::validateImage($file);
+
+        error_log('title errors: ' . print_r($errors, true));
+        error_log('image errors: ' . print_r($imageErrors, true));
+
+        if (!empty($imageErrors)) {
+            $errors['photo'] = $imageErrors;
+        }
+
+        if (!empty($errors)) {
+            error_log('BAILING OUT — validation failed');
+            $_SESSION['errors'] = $errors;
+            header('Location: /upload');
             exit;
         }
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $userId = Session::getCurrentUserId(); // Assuming user ID is stored in session
-            $data = [
-                'title' => $_POST['title'] ?? '',
-                'description' => $_POST['description'] ?? '',
-            ];
-            $file = $_FILES['photo'] ?? null;
 
-            //Validate the input data
-            $rules = [
-                'title' => ['required'],
-                'description' => ['optional'],
-            ];
-            $errors = Validator::validate($data, $rules);
-            // Validate the uploaded file
-            $imageErrors = Validator::validateImage($file);
-            if (!empty($errors) || !empty($imageErrors)) {
-                // Handle validation errors (e.g., redirect back with error messages)
-                $_SESSION['errors'] = $errors;
-                header('Location: /upload', ['errors' => $errors]);
-                unset($_SESSION['errors']);
-                exit;
-            }
+        error_log('VALIDATION PASSED — attempting file move');
 
-            // Move the uploaded file to a desired location
-            $uploadDir = __DIR__ . '/../public/images/uploads/';
-            $extension = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
-            $fileName = uniqid('photo_', true) . '.' . $extension;
-            $filePath = $uploadDir . $fileName;
-            if (move_uploaded_file($_FILES['photo']['tmp_name'], $filePath)) {
-                // Save photo details to the database
-                $photoId = $this->photoModel->createPhoto([
-                    'user_id' => Session::getCurrentUserId(),
-                    'file_name' => $fileName,
-                    'title' => $data['title'],
-                    'description' => $data['description']
-                ]);
-                header('Location: /photo/' . $photoId);
-                exit;
-            } else {
-                // Handle file upload error
-                $_SESSION['errors'] = ['photo' => ['Failed to upload the photo.']];
-                header('Location: /upload',['errors' => $errors]);
-                unset($_SESSION['errors']);
-                exit;
-            }
+        $uploadDir = __DIR__ . '/../public/images/uploads/';
+        $extension = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
+        $fileName = uniqid('photo_', true) . '.' . $extension;
+        $filePath = $uploadDir . $fileName;
+
+        if (move_uploaded_file($_FILES['photo']['tmp_name'], $filePath)) {
+            error_log('FILE MOVED OK — inserting into DB');
+            $photoId = $this->photoModel->createPhoto([
+                'user_id' => Session::getCurrentUserId(),
+                'file_name' => $fileName,
+                'title' => $data['title'],
+                'description' => $data['description']
+            ]);
+            error_log('DB INSERT RETURNED ID: ' . $photoId);
+            header('Location: /photo/' . $photoId);
+            exit;
+        } else {
+            error_log('FILE MOVE FAILED');
+            $_SESSION['errors'] = ['photo' => ['Failed to upload the photo.']];
+            header('Location: /upload');
+            exit;
         }
     }
+}
     public function delete($id)
     {
         if(!Session::isLoggedIn()){
@@ -115,14 +125,14 @@ class PhotoController extends Controller{
         if (!$photo || (int) $photo['user_id'] !== $userId) {
             // Handle the case where the photo does not belong to the user or does not exist
             $_SESSION['errors'] = ['photo' => ['You do not have permission to delete this photo.']];
-            header('Location: /gallery', ['errors' => $errors]);
+            header('Location: /gallery');
             unset($_SESSION['errors']);
             exit;
         }
         $deleteSuccess = $this->photoModel->deletePhoto($id, $userId);
         if (!$deleteSuccess) {
             $_SESSION['errors'] = ['photo' => ['Failed to delete the photo.']];
-            header('Location: /gallery', ['errors' => $errors]);
+            header('Location: /gallery');
             unset($_SESSION['errors']);
             exit;
         }

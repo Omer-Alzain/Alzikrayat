@@ -85,7 +85,6 @@ class Validator {
     
         $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($fileInfo, $file['tmp_name']);
-        finfo_close($fileInfo);
     
         if (!in_array($mimeType, $allowedTypes, true)) {
             $errors[] = 'Only JPG, PNG, and WEBP files are allowed.';
