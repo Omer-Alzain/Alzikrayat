@@ -4,7 +4,7 @@
             <div class="ar" dir="auto">Memory For All By All</div>
         </div>
         <hr>
-        <p class="copyright">© 2025 Alzikrayat Community. Built for saving the Heritage &amp; Archives.</p>
+        <p class="copyright">© 2026 Alzikrayat Community. Built for saving the Heritage &amp; Archives.</p>
     </div>
     <script src="/js/validate.js"></script>
     <script src="/js/gallery-layout.js"></script>
