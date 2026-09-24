@@ -1,7 +1,11 @@
-# Database credentials
-config/database.php
-
 # Uploaded images
 public/images/uploads/*
 
-# Local test files
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
