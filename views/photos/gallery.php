@@ -1,8 +1,8 @@
 <?php require __DIR__ . '/../layout/header.php'; ?>
 
 <div class="gallery-header">
-    <h1>University Memory Gallery</h1>
-    <p class="sub">Browsing through shared academic memories.</p>
+    <h1> Memories Gallery</h1>
+    <p class="sub">Browsing through shared memories.</p>
 
     <div class="toolbar-row">
         <div class="layout-toggles">

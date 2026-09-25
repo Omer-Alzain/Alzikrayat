@@ -1,7 +1,17 @@
 <?php
+//import nedded file.
 require_once __DIR__ . '/../core/Model.php';
+/**
+ * class for controlling the database opration for photos.
+ * has 4 function to creat a photo,fetch photo by id and for fetching all photos and delet a photo.
+ */
 class PhotoModel extends Model
 {
+    /**
+     * fetching all photos
+     * Params:$stmt to store the prepared query and excute it and store the result.
+     * return array of photos.
+    */ 
     public function getAllPhotos()
     {
         $stmt = $this->db->prepare("SELECT * FROM Photos");
@@ -9,6 +19,11 @@ class PhotoModel extends Model
         return $stmt->fetchAll();
     }
 
+    /**
+     * fetching a photo
+     * Params:$stmt to store the prepared query and excute it and store the result.
+     * return a photo.
+    */ 
     public function getPhotoById($id)
     {
         $stmt = $this->db->prepare("SELECT * FROM Photos WHERE id = :id");
@@ -17,6 +32,11 @@ class PhotoModel extends Model
         return $stmt->fetch();
     }
 
+    /**
+     * storing new photo data 
+     * Params:$stmt to store the prepared query and excute it.
+     * return the id of the new photo.
+    */ 
     public function createPhoto($data)
     {
         $stmt = $this->db->prepare(
@@ -32,6 +52,12 @@ class PhotoModel extends Model
         return (int) $this->db->lastInsertId();
     }
 
+    /**
+     * deleting a photo
+     * Params:$stmt to store the prepared query and excute it.
+     * $photo store the result of the fetch.
+     * return boolien.
+    */ 
     public function deletePhoto(int $photoId, int $userId): bool
     {
         // First, check if the photo belongs to the user
